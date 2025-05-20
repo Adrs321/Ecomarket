@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Listar Usuarios - Ecomarket</title>
+</head>
+<body>
+    <h1>Lista de Usuarios</h1>
+    <button onclick="location.href='index.html'">Volver al Inicio</button>
+    <table border="1" id="usuariosTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Correo Electrónico</th>
+                <th>Tipo Cuenta</th>
+                <th>Estado Cuenta</th>
+            </tr>
+        </thead>
+        <tbody>
+            
+        </tbody>
+    </table>
+
+    <script>
+        fetch('/api/usuarios')
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('usuariosTable').getElementsByTagName('tbody')[0];
+                data.forEach(usuario => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${usuario.idUsuario}</td>
+                        <td>${usuario.nombre}</td>
+                        <td>${usuario.correoElectronico}</td>
+                        <td>${usuario.tipoCuenta}</td>
+                        <td>${usuario.estadoCuenta}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            })
+            .catch(error => {
+                alert('Error al cargar la lista de usuarios: ' + error);
+            });
+    </script>
+</body>
+</html>

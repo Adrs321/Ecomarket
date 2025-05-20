@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Crear Usuario</title>
+</head>
+<body>
+    <h2>Crear Usuario</h2>
+    Nombre: <input type="text" id="txtNombre" /><br />
+    Correo Electrónico: <input type="email" id="txtCorreoElectronico" /><br />
+    Contraseña: <input type="password" id="txtContrasena" /><br />
+    Tipo de Cuenta:
+    <select id="selTipoCuenta">
+        <option value="Cliente">Cliente</option>
+        <option value="Gerente">Gerente</option>
+        <option value="Administrador">Administrador</option>
+        <option value="EmpleadoVentas">EmpleadoVentas</option>
+        <option value="Logistica">Logistica</option>
+    </select><br />
+    Estado de Cuenta:
+    <select id="selEstadoCuenta">
+        <option value="Activo">Activo</option>
+        <option value="Inactivo">Inactivo</option>
+    </select><br />
+    <button onclick="grabarUsuario()">Crear Usuario</button>
+    <button onclick="location.href='index.html'">Volver al Inicio</button>
+
+    <script>
+        function grabarUsuario() {
+            const url = "http://localhost:8080/api/usuarios";
+            const data = {
+                nombre: document.getElementById("txtNombre").value,
+                correoElectronico: document.getElementById("txtCorreoElectronico").value,
+                contraseña: document.getElementById("txtContrasena").value,
+                tipoCuenta: document.getElementById("selTipoCuenta").value,
+                estadoCuenta: document.getElementById("selEstadoCuenta").value
+            };
+
+            console.log("Datos a enviar:", JSON.stringify(data));
+
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        alert("Error al crear usuario");
+                    } else {
+                        alert("Usuario creado exitosamente");
+                    }
+                })
+                .catch(error => {
+                    alert("Error de conexión");
+                });
+        }
+    </script>
+</body>
+</html>
