@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 @Entity
@@ -19,7 +20,8 @@ public class Categoria {
     private Long id;
 
     private String nombre;
-
+    
+    @JsonIgnore
     @OneToMany(mappedBy = "categoria",cascade = CascadeType.ALL)   
     @JsonManagedReference
     private List<Producto> productos;

@@ -1,5 +1,6 @@
 package ecomarket.Ecomarket.DTO;
 
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -7,8 +8,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProductoDTO {
-    private Integer id;
+public class ProductoDTOrequest {
     private String nombre;
     private String descripcion;
     private Double precio;
@@ -16,4 +16,3 @@ public class ProductoDTO {
     private Integer proveedorId; 
     private Long categoriaId; 
 }
-

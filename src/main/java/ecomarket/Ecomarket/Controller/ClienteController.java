@@ -1,8 +1,12 @@
 package ecomarket.Ecomarket.Controller;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,8 +30,9 @@ public class ClienteController {
 
     // Crear un nuevo cliente
     @PostMapping("/crear")
-    public Cliente crearCliente(@RequestBody Cliente cliente) {
-        return clienteRepository.save(cliente);
+    public ResponseEntity<EntityModel<Cliente>> crearCliente(@RequestBody Cliente cliente) {
+        Cliente savedCliente = clienteRepository.save(cliente);
+        return ResponseEntity.ok(toModel(savedCliente));
     }
 
     // Login method corrected with proper variables
@@ -46,31 +51,46 @@ public class ClienteController {
 
     // Obtener un cliente por ID
     @GetMapping("/{id}")
-    public Cliente obtenerClientePorId(@PathVariable Long id) {
-        return clienteRepository.findById(id)
+    public ResponseEntity<EntityModel<Cliente>> obtenerClientePorId(@PathVariable Long id) {
+        Cliente cliente = clienteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+        return ResponseEntity.ok(toModel(cliente));
     }
 
     // Obtener todos los clientes
     @GetMapping("/listar")
-    public List<Cliente> listarClientes() {
-        return clienteRepository.findAll();
+    public ResponseEntity<CollectionModel<EntityModel<Cliente>>> listarClientes() {
+        List<EntityModel<Cliente>> clientes = clienteRepository.findAll().stream()
+                .map(this::toModel)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(CollectionModel.of(clientes,
+                linkTo(methodOn(ClienteController.class).listarClientes()).withSelfRel()));
     }
 
     // Actualizar un cliente
     @PutMapping("/actualizar/{id}")
-    public Cliente actualizarCliente(@PathVariable Long id, @RequestBody Cliente clienteActualizado) {
-        return clienteRepository.findById(id).map(cliente -> {
+    public ResponseEntity<EntityModel<Cliente>> actualizarCliente(@PathVariable Long id, @RequestBody Cliente clienteActualizado) {
+        Cliente updatedCliente = clienteRepository.findById(id).map(cliente -> {
             cliente.setNombre(clienteActualizado.getNombre());
             cliente.setCorreo(clienteActualizado.getCorreo());
             cliente.setTelefono(clienteActualizado.getTelefono());
             return clienteRepository.save(cliente);
         }).orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+        return ResponseEntity.ok(toModel(updatedCliente));
     }
 
     // Eliminar un cliente
     @DeleteMapping("/eliminar/{id}")
-    public void eliminarCliente(@PathVariable Long id) {
+    public ResponseEntity<?> eliminarCliente(@PathVariable Long id) {
         clienteRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    private EntityModel<Cliente> toModel(Cliente cliente) {
+        return EntityModel.of(cliente,
+                linkTo(methodOn(ClienteController.class).obtenerClientePorId(cliente.getId())).withSelfRel(),
+                linkTo(methodOn(ClienteController.class).actualizarCliente(cliente.getId(), cliente)).withRel("actualizar"),
+                linkTo(methodOn(ClienteController.class).eliminarCliente(cliente.getId())).withRel("eliminar"),
+                linkTo(methodOn(ClienteController.class).listarClientes()).withRel("clientes"));
     }
 }

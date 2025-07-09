@@ -3,8 +3,12 @@ package ecomarket.Ecomarket.Controller;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -33,60 +37,71 @@ public class RepartidorController {
     private ProveedorRepository proveedorRepository;
 
     @PostMapping("/agregar")
-    public ResponseEntity<?> agregar(@RequestBody RepartidorDTO dto) {
-    if (dto.getIdProveedor() == null) {
-        return ResponseEntity.badRequest().body("idProveedor no puede ser null");
+    public ResponseEntity<EntityModel<Repartidor>> agregar(@RequestBody RepartidorDTO dto) {
+        if (dto.getIdProveedor() == null) {
+            return ResponseEntity.badRequest().body(null);
+        }
+
+        Optional<Proveedor> proveedorOpt = proveedorRepository.findById(dto.getIdProveedor());
+        if (proveedorOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
+
+        Repartidor repartidor = new Repartidor();
+        repartidor.setNombre(dto.getNombre());
+        repartidor.setTelefono(dto.getTelefono());
+        repartidor.setVehiculo(dto.getVehiculo());
+        repartidor.setPatente(dto.getPatenteVehiculo());
+        repartidor.setTipoVehiculo(dto.getTipoVehiculo());
+        repartidor.setProveedor(proveedorOpt.get());
+
+        Repartidor savedRepartidor = repartidorRepository.save(repartidor);
+        return ResponseEntity.ok(toModel(savedRepartidor));
     }
 
-    Optional<Proveedor> proveedorOpt = proveedorRepository.findById(dto.getIdProveedor());
-    if (proveedorOpt.isEmpty()) {
-        return ResponseEntity.badRequest().body("Proveedor no encontrado");
-    }
-
-    Repartidor repartidor = new Repartidor();
-    repartidor.setNombre(dto.getNombre());
-    repartidor.setTelefono(dto.getTelefono());
-    repartidor.setVehiculo(dto.getTipoVehiculo());
-    repartidor.setPatente(dto.getPatenteVehiculo());
-    repartidor.setTipoVehiculo(dto.getTipoVehiculo());
-    repartidor.setProveedor(proveedorOpt.get());
-
-    repartidorRepository.save(repartidor);
-    return ResponseEntity.ok("Repartidor agregado correctamente");
-
-
-}
     @GetMapping("/listar")
-    public List<Repartidor> listarRepartidores() {
-        return repartidorRepository.findAll();
+    public ResponseEntity<CollectionModel<EntityModel<Repartidor>>> listarRepartidores() {
+        List<EntityModel<Repartidor>> repartidores = repartidorRepository.findAll().stream()
+                .map(this::toModel)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(CollectionModel.of(repartidores,
+                linkTo(methodOn(RepartidorController.class).listarRepartidores()).withSelfRel()));
     }
 
     @DeleteMapping("/eliminar/{id}")
-    public ResponseEntity<String> eliminarRepartidor(@PathVariable Integer id) {
+    public ResponseEntity<?> eliminarRepartidor(@PathVariable Integer id) {
         repartidorRepository.deleteById(id);
-        return ResponseEntity.ok("Repartidor eliminado");
-    }    
-
-@PutMapping("/actualizar/{id}")
-public ResponseEntity<?> actualizarRepartidor(@PathVariable Integer id, @RequestBody RepartidorDTO dto) {
-    Optional<Repartidor> optional = repartidorRepository.findById(id);
-    if (optional.isEmpty()) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Repartidor no encontrado");
+        return ResponseEntity.noContent().build();
     }
 
-    Repartidor repartidor = optional.get();
-    repartidor.setNombre(dto.getNombre());
-    repartidor.setTelefono(dto.getTelefono());
-    repartidor.setVehiculo(dto.getTipoVehiculo());
-    repartidor.setPatente(dto.getPatenteVehiculo());
-    repartidor.setTipoVehiculo(dto.getTipoVehiculo());
+    @PutMapping("/actualizar/{id}")
+    public ResponseEntity<EntityModel<Repartidor>> actualizarRepartidor(@PathVariable Integer id, @RequestBody RepartidorDTO dto) {
+        Optional<Repartidor> optional = repartidorRepository.findById(id);
+        if (optional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
 
-    if (dto.getIdProveedor() != null) {
-        Optional<Proveedor> proveedorOpt = proveedorRepository.findById(dto.getIdProveedor());
-        proveedorOpt.ifPresent(repartidor::setProveedor);
+        Repartidor repartidor = optional.get();
+        repartidor.setNombre(dto.getNombre());
+        repartidor.setTelefono(dto.getTelefono());
+        repartidor.setVehiculo(dto.getVehiculo());
+        repartidor.setPatente(dto.getPatenteVehiculo());
+        repartidor.setTipoVehiculo(dto.getTipoVehiculo());
+
+        if (dto.getIdProveedor() != null) {
+            Optional<Proveedor> proveedorOpt = proveedorRepository.findById(dto.getIdProveedor());
+            proveedorOpt.ifPresent(repartidor::setProveedor);
+        }
+
+        Repartidor updatedRepartidor = repartidorRepository.save(repartidor);
+        return ResponseEntity.ok(toModel(updatedRepartidor));
     }
 
-    repartidorRepository.save(repartidor);
-    return ResponseEntity.ok("Repartidor actualizado con éxito");
-}
+    private EntityModel<Repartidor> toModel(Repartidor repartidor) {
+        return EntityModel.of(repartidor,
+                linkTo(methodOn(RepartidorController.class).listarRepartidores()).withSelfRel(),
+                linkTo(methodOn(RepartidorController.class).agregar(null)).withRel("agregar"),
+                linkTo(methodOn(RepartidorController.class).actualizarRepartidor(repartidor.getId(), null)).withRel("actualizar"),
+                linkTo(methodOn(RepartidorController.class).eliminarRepartidor(repartidor.getId())).withRel("eliminar"));
+    }
 }

@@ -1,7 +1,6 @@
 package ecomarket.Ecomarket.Model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-
+import java.time.LocalDateTime;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -17,20 +16,23 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Repartidor {
+public class Calificacion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    private String nombre;
-    private String telefono;
-    private String vehiculo;       
-    private String patente;        
-    private String tipoVehiculo;   
+    private Integer puntaje;
+
+    private String comentario;
+
+    private LocalDateTime fecha;
 
     @ManyToOne
-    @JsonBackReference
-    @JoinColumn(name = "proveedor_id")
-    private Proveedor proveedor;
+    @JoinColumn(name = "cliente_id")
+    private Cliente cliente;
+
+    @ManyToOne
+    @JoinColumn(name = "producto_id")
+    private Producto producto;
 }

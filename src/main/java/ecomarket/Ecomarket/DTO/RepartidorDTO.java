@@ -5,6 +5,7 @@ public class RepartidorDTO {
     private String nombre;
     private String telefono;
     private String patenteVehiculo;
+    private String vehiculo;
     private String tipoVehiculo;
     private Integer idProveedor;
     
@@ -30,6 +31,10 @@ public class RepartidorDTO {
         return tipoVehiculo;
     }
 
+    public String getVehiculo() {
+        return vehiculo;
+    }
+
     public void setIdRepartidor(Integer id) {
         this.id = id;
     }
@@ -48,6 +53,9 @@ public class RepartidorDTO {
 
     public void setTipoVehiculo(String tipoVehiculo) {
         this.tipoVehiculo = tipoVehiculo;
+    }
+    public void setVehiculo(String vehiculo) {
+        this.vehiculo = vehiculo;
     }
         public Integer getIdProveedor() {
         return idProveedor;

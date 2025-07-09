@@ -1,21 +1,21 @@
 package ecomarket.Ecomarket.Controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
+import ecomarket.Ecomarket.DTO.CategoriaDTO;
 import ecomarket.Ecomarket.Model.Categoria;
 import ecomarket.Ecomarket.Repositorio.CategoriaRepository;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/categoria")
@@ -24,34 +24,62 @@ public class CategoriaController {
     @Autowired
     private CategoriaRepository categoriaRepository;
 
-    // Crear categoria
+    // Crear categoría
     @PostMapping("/grabar")
-    public Categoria postSave(@RequestBody Categoria categoria) {
-        System.out.println("Categoria: " + categoria);
-        return categoriaRepository.save(categoria);        
-        
+    public ResponseEntity<EntityModel<CategoriaDTO>> crearCategoria(@RequestBody CategoriaDTO dto) {
+        Categoria categoria = new Categoria();
+        categoria.setNombre(dto.getNombre());
+
+        Categoria saved = categoriaRepository.save(categoria);
+        CategoriaDTO responseDto = new CategoriaDTO(saved.getId(), saved.getNombre());
+
+        return ResponseEntity.ok(toModel(responseDto));
     }
-    // Listar categorias
+
+    // Listar categorías
     @GetMapping("/listar")
-    public Iterable<Categoria> getAll() {
-        return categoriaRepository.findAll();
+    public ResponseEntity<CollectionModel<EntityModel<CategoriaDTO>>> listarCategorias() {
+        List<EntityModel<CategoriaDTO>> categorias = categoriaRepository.findAll().stream()
+                .map(c -> toModel(new CategoriaDTO(c.getId(), c.getNombre())))
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(CollectionModel.of(categorias,
+                linkTo(methodOn(CategoriaController.class).listarCategorias()).withSelfRel()));
     }
-    // Buscar categoria
+
+    // Actualizar categoría
     @PutMapping("/actualizar/{id}")
-    public Categoria putUpdate(@RequestBody Categoria categoria, @PathVariable Long id) {
-        if (!categoriaRepository.existsById(id)) {
-            throw new RuntimeException("La categoría con ID " + id + " no existe.");
+    public ResponseEntity<EntityModel<CategoriaDTO>> actualizarCategoria(@PathVariable Long id,
+                                                                          @RequestBody CategoriaDTO dto) {
+        Optional<Categoria> optionalCategoria = categoriaRepository.findById(id);
+        if (optionalCategoria.isEmpty()) {
+            return ResponseEntity.notFound().build();
         }
-        categoria.setId(id);
-        return categoriaRepository.save(categoria);
+
+        Categoria categoria = optionalCategoria.get();
+        categoria.setNombre(dto.getNombre());
+        Categoria updated = categoriaRepository.save(categoria);
+
+        CategoriaDTO updatedDto = new CategoriaDTO(updated.getId(), updated.getNombre());
+        return ResponseEntity.ok(toModel(updatedDto));
     }
-    // Eliminar categoria
+
+    // Eliminar categoría
     @DeleteMapping("/eliminar/{id}")
-    public void delete(@PathVariable Long id) {
-        if (categoriaRepository.existsById(id)) {
-            categoriaRepository.deleteById(id);
-        } else {
-            throw new RuntimeException("La categoría con ID " + id + " no existe.");
+    public ResponseEntity<?> eliminarCategoria(@PathVariable Long id) {
+        if (!categoriaRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
         }
+        categoriaRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // Convertir DTO a EntityModel con links HATEOAS
+    private EntityModel<CategoriaDTO> toModel(CategoriaDTO dto) {
+        return EntityModel.of(dto,
+                linkTo(methodOn(CategoriaController.class).listarCategorias()).withRel("listar"),
+                linkTo(methodOn(CategoriaController.class).crearCategoria(dto)).withRel("crear"),
+                linkTo(methodOn(CategoriaController.class).actualizarCategoria(dto.getId(), dto)).withRel("actualizar"),
+                linkTo(methodOn(CategoriaController.class).eliminarCategoria(dto.getId())).withRel("eliminar"));
     }
 }
