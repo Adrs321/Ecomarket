@@ -30,9 +30,12 @@ public class Pedido {
     @JsonBackReference
     private Cliente cliente;
 
+    @ManyToOne
+    @JoinColumn(name = "cupon_id")
+    private Cupon cupon;
+
     // @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL)
     // @JsonManagedReference
     // private List<DetallePedido> detalles;
 }
-
 

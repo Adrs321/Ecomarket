@@ -8,13 +8,7 @@ import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import ecomarket.Ecomarket.Model.DetallePedido;
 import ecomarket.Ecomarket.Model.Pedido;
@@ -22,6 +16,7 @@ import ecomarket.Ecomarket.Model.Producto;
 import ecomarket.Ecomarket.DTO.DetallePedidoDTO;
 import ecomarket.Ecomarket.DTO.ProductoDTO;
 import ecomarket.Ecomarket.DTO.ProveedorDTO;
+import ecomarket.Ecomarket.DTO.PedidoDTO; 
 import ecomarket.Ecomarket.Repositorio.DetallePedidoRepository;
 import ecomarket.Ecomarket.Repositorio.PedidoRepository;
 import ecomarket.Ecomarket.Repositorio.ProductoRepository;
@@ -37,25 +32,32 @@ public class DetallePedidoController {
     @Autowired
     private PedidoRepository pedidoRepository;
 
-    ////Crear un detalle de pedido
+    // Crear un detalle de pedido
     @PostMapping("/grabar")
     public ResponseEntity<EntityModel<DetallePedidoDTO>> crearDetallePedido(@RequestBody DetallePedidoDTO detallePedidoDTO) {
         if (detallePedidoDTO.getProducto() == null || detallePedidoDTO.getProducto().getId() == null) {
             throw new RuntimeException("Debe indicar el id del producto");
         }
+        if (detallePedidoDTO.getPedido() == null || detallePedidoDTO.getPedido().getId() == null) {
+            throw new RuntimeException("Debe indicar el id del pedido");
+        }
+
         Producto producto = productoRepository.findById(detallePedidoDTO.getProducto().getId())
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+        Pedido pedido = pedidoRepository.findById(detallePedidoDTO.getPedido().getId())
+                .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
 
         DetallePedido detallePedido = new DetallePedido();
         detallePedido.setCantidad(detallePedidoDTO.getCantidad());
         detallePedido.setPrecioUnitario(detallePedidoDTO.getPrecioUnitario().doubleValue());
         detallePedido.setProducto(producto);
+        detallePedido.setPedido(pedido);
 
         DetallePedido savedDetallePedido = detallePedidoRepository.save(detallePedido);
         return ResponseEntity.ok(toModelDTO(savedDetallePedido));
     }
 
-    ////Listar todos los detalles de pedidos
+    // Listar todos los detalles de pedidos
     @GetMapping("/listar")
     public ResponseEntity<CollectionModel<EntityModel<DetallePedidoDTO>>> listarDetallesPedidos() {
         List<EntityModel<DetallePedidoDTO>> detallesPedidos = detallePedidoRepository.findAll().stream()
@@ -98,11 +100,26 @@ public class DetallePedidoController {
             }
         }
 
+        // Mapeo del pedido para el DTO
+        Pedido pedido = detallePedido.getPedido();
+        PedidoDTO pedidoDTO = null;
+        if (pedido != null) {
+            pedidoDTO = new PedidoDTO();
+            pedidoDTO.setId(pedido.getId());
+            pedidoDTO.setEstado(pedido.getEstado());
+            pedidoDTO.setDireccionEntrega(pedido.getDireccionEntrega());
+            pedidoDTO.setMetodoPago(pedido.getMetodoPago());
+            pedidoDTO.setFechaPedido(pedido.getFechaPedido());
+            pedidoDTO.setFechaEntrega(pedido.getFechaEntrega());
+            
+        }
+
         DetallePedidoDTO detallePedidoDTO = new DetallePedidoDTO(
                 detallePedido.getId(),
                 detallePedido.getCantidad(),
                 detallePedido.getPrecioUnitario(),
-                productoDTO
+                productoDTO,
+                pedidoDTO 
         );
 
         EntityModel<DetallePedidoDTO> detallePedidoModel = EntityModel.of(detallePedidoDTO,
